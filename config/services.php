@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'voicerss' => [
+        'api_key' => env('VOICERSS_API_KEY'),
+    ],
+
+
 ];
