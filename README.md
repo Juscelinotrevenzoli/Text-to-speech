@@ -22,5 +22,5 @@ A aplicação permite que o usuário digite um texto em um formulário e, ao env
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/SEU_USUARIO/laravel-tts.git
+git clone https://github.com/Juscelinotrevenzoli/Text-to-speech
 cd laravel-tts
