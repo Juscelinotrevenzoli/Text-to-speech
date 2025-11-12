@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
-    jpeglib-tools \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
