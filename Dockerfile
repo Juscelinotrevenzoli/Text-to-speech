@@ -1,57 +1,35 @@
-# Use imagem oficial do PHP com FPM
-FROM php:8.2-fpm
+# Dockerfile - Laravel + PHP 8.2 + Apache
+FROM php:8.2-apache
 
-# Definir diretório de trabalho
-WORKDIR /var/www/html
+# Ativa módulos do Apache e aponta o DocumentRoot para /public
+RUN a2enmod rewrite headers \
+  && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
+  && sed -ri 's/AllowOverride\s+None/AllowOverride All/g' /etc/apache2/apache2.conf
 
-# Instalar dependências do sistema
+# Dependências do sistema para extensões PHP
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libzip-dev \
-    locales \
-    unzip \
-    vim \
-    zip \
-    && rm -rf /var/lib/apt/lists/*
+    git unzip libpng-dev libjpeg62-turbo-dev libfreetype6-dev libzip-dev libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensões PHP necessárias
+# Extensões PHP (ajuste se não precisar de pgsql)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-    bcmath \
-    ctype \
-    fileinfo \
-    gd \
-    json \
-    mbstring \
-    pdo \
-    pdo_mysql \
-    pdo_pgsql \
-    pdo_sqlite \
-    tokenizer \
-    xml \
-    zip
+  && docker-php-ext-install -j$(nproc) gd zip pdo pdo_mysql pdo_pgsql pdo_sqlite opcache
 
-# Instalar Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copiar arquivos da aplicação
+WORKDIR /var/www/html
 COPY . .
 
-# Instalar dependências PHP
-RUN composer install --no-dev --optimize-autoloader
+# Instala dependências Laravel (produção)
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader \
+  && chown -R www-data:www-data /var/www/html \
+  && find storage bootstrap/cache -type d -exec chmod 775 {} \;
 
-# Criar diretórios necessários e definir permissões
-RUN mkdir -p storage/logs \
-    && chmod -R 775 storage bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html
+# Entrypoint que prepara APP_KEY, cache e SQLite (se usado)
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expor porta
-EXPOSE 9000
-
-# Comando padrão
-CMD ["php-fpm"]
+EXPOSE 80
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["apache2-foreground"]
