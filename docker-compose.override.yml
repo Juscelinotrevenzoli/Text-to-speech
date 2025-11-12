@@ -1,0 +1,23 @@
+# Este arquivo é usado apenas em desenvolvimento local
+# Não deve ser commitado no repositório
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  # Mailhog para testar envio de emails em desenvolvimento
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: laravel-tts-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - laravel
